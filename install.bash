@@ -22,6 +22,17 @@ get_credentials() {
     fi
 }
 
+# Function to set system timezone
+set_timezone() {
+    echo "Setting system timezone..."
+    if [ $(timedatectl show --value --property Timezone) != "Asia/Kolkata" ]; then
+        timedatectl set-timezone Asia/Kolkata
+        echo "Timezone set to Asia/Kolkata."
+    else
+        echo "Timezone already set to Asia/Kolkata."
+    fi
+}
+
 # Function to update system and install required packages
 update_system() {
     echo "Updating system and installing required packages..."
@@ -33,6 +44,22 @@ update_system() {
         }
     done
 }
+
+# Function to install Docker
+install_docker() {
+    echo "Installing Docker..."
+    if ! command -v docker >/dev/null 2>&1; then
+        apt-get update
+        apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        apt-get update
+        apt-get install -y docker-ce docker-ce-cli containerd.io
+    else
+        echo "Docker already installed."
+    fi
+}
+
 
 # Function to install fonts
 install_fonts() {
@@ -56,16 +83,23 @@ install_fonts() {
 # Function to install and configure Starship prompt for all current and future users
 setup_starship() {
     echo "Setting up Starship for all current and future users..."
-    command -v starship >/dev/null 2>&1 || {
+    if ! command -v starship >/dev/null 2>&1; then
         echo "Installing Starship..."
-        curl -sS https://starship.rs/install.sh | bash
-    }
-    mkdir -p /etc/skel/.config
-    local config_url="https://gist.githubusercontent.com/yashodhank/0343daac9c8950bc63ffb9263043e345/raw/05de79957573bded1409f6236f41eb6b97384bf2/starship.toml"
-    curl "$config_url" > /etc/skel/.config/starship.toml
-    if ! grep -q 'starship init bash' /etc/profile.d/starship.sh 2>/dev/null; then
-        echo 'eval "$(starship init bash)"' > /etc/profile.d/starship.sh
-        chmod +x /etc/profile.d/starship.sh
+        curl -sS https://starship.rs/install.sh -o /tmp/install_starship.sh
+        sh /tmp/install_starship.sh -y || {
+            echo "Failed to install Starship." >&2
+            return 1
+        }
+        rm -f /tmp/install_starship.sh
+    fi
+
+    # Set Starship for all users
+    echo 'eval "$(starship init bash)"' > /etc/profile.d/starship.sh
+    chmod +x /etc/profile.d/starship.sh
+
+    # Ensure the PATH includes /usr/local/bin
+    if ! grep -q '/usr/local/bin' /etc/profile; then
+        echo 'PATH=$PATH:/usr/local/bin' >> /etc/profile
     fi
 }
 
