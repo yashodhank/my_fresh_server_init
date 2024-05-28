@@ -95,29 +95,29 @@ setup_starship() {
 
     # Download and apply the custom Starship configuration
     STARSHIP_CONFIG_URL="https://gist.githubusercontent.com/yashodhank/0343daac9c8950bc63ffb9263043e345/raw/starship.toml"
+    mkdir -p /etc/skel/.config
     curl -sS "$STARSHIP_CONFIG_URL" -o /etc/skel/.config/starship.toml || {
         echo "Failed to download the Starship configuration." >&2
         return 1
     }
 
-    # Ensure the .config directory exists and apply configuration for future users
-    mkdir -p /etc/skel/.config
-    cp /etc/skel/.config/starship.toml /etc/skel/.config/starship.toml
-
     # Apply the configuration to all existing users
     getent passwd | while IFS=: read -r name _ uid gid _ home shell; do
         if [ "$uid" -ge 1000 ] && [ -d "$home" ] && [[ "$shell" == *"/bash" ]]; then
             local config_dir="$home/.config"
-            mkdir -p "$config_of_dir"
+            mkdir -p "$config_dir"
             cp /etc/skel/.config/starship.toml "$config_dir/starship.toml"
+
             if ! grep -q 'starship init bash' "$home/.bashrc"; then
                 echo 'eval "$(starship init bash)"' >> "$home/.bashrc"
             fi
         fi
     done
 
-    # Apply configuration for the current session
-    eval "$(starship init bash)"
+    # Apply configuration for the current session if running interactively
+    if [ -n "$PS1" ]; then
+        eval "$(starship init bash)"
+    fi
 }
 
 # Function to install Rclone
