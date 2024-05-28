@@ -12,7 +12,7 @@ This script automates the process of setting up a server with the necessary soft
 You can directly download and run the script from the GitHub repository using the following one-liner command:
 
 ```bash
-curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/setup_server.sh | sudo bash -s -- -1001566247622 "your_key_here"
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "your_key_here"
 ```
 
 ### Setup Instructions
@@ -29,7 +29,7 @@ curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/
    Before running the script, make sure it is executable:
 
    ```bash
-   chmod +x setup_server.sh
+   chmod +x install.bash
    ```
 
 ## Usage Options
@@ -43,7 +43,7 @@ Set the USERID and KEY as environment variables before running the script:
 ```bash
 export USERID=-1001566247622
 export KEY="your_key_here"
-sudo ./setup_server.sh
+sudo ./install.bash
 ```
 
 ### Using Command-Line Arguments
@@ -51,7 +51,7 @@ sudo ./setup_server.sh
 Pass the USERID and KEY directly as command-line arguments:
 
 ```bash
-sudo ./setup_server.sh -1001566247622 "your_key_here"
+sudo ./install.bash -1001566247622 "your_key_here"
 ```
 
 ### Interactive Prompts
