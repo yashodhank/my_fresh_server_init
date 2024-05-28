@@ -108,15 +108,21 @@ setup_starship() {
             mkdir -p "$config_dir"
             cp /etc/skel/.config/starship.toml "$config_dir/starship.toml"
 
+            # Make sure to source Starship in .bashrc
             if ! grep -q 'starship init bash' "$home/.bashrc"; then
                 echo 'eval "$(starship init bash)"' >> "$home/.bashrc"
             fi
         fi
     done
 
-    # Apply configuration for the current session if running interactively
-    if [ -n "$PS1" ]; then
-        eval "$(starship init bash)"
+    # Ensure the root user also has the configuration if the script is run as root
+    if [ "$HOME" = "/root" ]; then
+        mkdir -p "$HOME/.config"
+        cp /etc/skel/.config/starship.toml "$HOME/.config/starship.toml"
+        if ! grep -q 'starship init bash' "$HOME/.bashrc"; then
+            echo 'eval "$(starship init bash)"' >> "$HOME/.bashrc"
+        fi
+        source "$HOME/.bashrc"
     fi
 }
 
