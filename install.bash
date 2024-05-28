@@ -83,24 +83,41 @@ install_fonts() {
 # Function to install and configure Starship prompt for all current and future users
 setup_starship() {
     echo "Setting up Starship for all current and future users..."
+    
+    # Install Starship if it's not already installed
     if ! command -v starship >/dev/null 2>&1; then
         echo "Installing Starship..."
-        curl -sS https://starship.rs/install.sh -o /tmp/install_starship.sh
-        sh /tmp/install_starship.sh -y || {
+        curl -sS https://starship.rs/install.sh | sh -s -- -y || {
             echo "Failed to install Starship." >&2
-            return 1
+            return 1  # Return with error code if installation fails
         }
-        rm -f /tmp/install_starship.sh
     fi
 
-    # Set Starship for all users
-    echo 'eval "$(starship init bash)"' > /etc/profile.d/starship.sh
-    chmod +x /etc/profile.d/starship.sh
+    # Download and apply the custom Starship configuration
+    STARSHIP_CONFIG_URL="https://gist.githubusercontent.com/yashodhank/raw/HEAD/starship.toml"
+    curl -sS "$STARSHIP_CONFIG_URL" -o /etc/skel/.config/starship.toml || {
+        echo "Failed to download the Starship configuration." >&2
+        return 1
+    }
 
-    # Ensure the PATH includes /usr/local/bin
-    if ! grep -q '/usr/local/bin' /etc/profile; then
-        echo 'PATH=$PATH:/usr/local/bin' >> /etc/profile
-    fi
+    # Ensure the .config directory exists and apply configuration for future users
+    mkdir -p /etc/skel/.config
+    cp /etc/skel/.config/starship.toml /etc/skel/.config/starship.toml
+
+    # Apply the configuration to all existing users
+    getent passwd | while IFS=: read -r name _ uid gid _ home shell; do
+        if [ "$uid" -ge 1000 ] && [ -d "$home" ] && [[ "$shell" == *"/bash" ]]; then
+            local config_dir="$home/.config"
+            mkdir -p "$config_of_dir"
+            cp /etc/skel/.config/starship.toml "$config_dir/starship.toml"
+            if ! grep -q 'starship init bash' "$home/.bashrc"; then
+                echo 'eval "$(starship init bash)"' >> "$home/.bashrc"
+            fi
+        fi
+    done
+
+    # Apply configuration for the current session
+    eval "$(starship init bash)"
 }
 
 # Function to install Rclone
