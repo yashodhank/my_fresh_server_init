@@ -94,7 +94,7 @@ setup_starship() {
     fi
 
     # Download and apply the custom Starship configuration
-    STARSHIP_CONFIG_URL="https://gist.githubusercontent.com/yashodhank/raw/HEAD/starship.toml"
+    STARSHIP_CONFIG_URL="https://gist.githubusercontent.com/yashodhank/0343daac9c8950bc63ffb9263043e345/raw/starship.toml"
     curl -sS "$STARSHIP_CONFIG_URL" -o /etc/skel/.config/starship.toml || {
         echo "Failed to download the Starship configuration." >&2
         return 1
