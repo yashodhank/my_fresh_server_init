@@ -1,13 +1,29 @@
 #!/bin/bash
 
-# Ensures the script is run as root and logs output
+# Ensure the script is run as root and set up logging
 if [ "$(id -u)" -ne 0 ]; then
     echo "This script must be run as root" >&2
     exit 1
 fi
 
-log_file="/var/log/setup_server.log"
-exec > >(tee -a "$log_file") 2>&1
+# Log file location
+LOG_FILE="/var/log/setup_server.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Logging functions
+log_info() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] $1" | tee -a "$LOG_FILE"
+}
+
+log_warning() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $1" | tee -a "$LOG_FILE"
+}
+
+log_error() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $1" | tee -a "$LOG_FILE" >&2
+}
+
+log_info "Script execution started."
 
 # Function to get USERID and KEY from environment variables or user input
 get_credentials() {
@@ -16,57 +32,62 @@ get_credentials() {
 
     if [ -z "$USERID" ]; then
         read -p "Enter USERID: " USERID
+        log_info "USERID provided by user input."
     fi
     if [ -z "$KEY" ]; then
         read -p "Enter KEY: " KEY
+        log_info "KEY provided by user input."
     fi
 }
 
-# Function to set system timezone with environment variable support, user input, and a default value
+# Function to set system timezone with support for environment variable or user input
 set_timezone() {
     local default_tz="Asia/Kolkata"
-    local tz="${TIMEZONE:-$default_tz}"  # Use TIMEZONE env variable if set, otherwise use default
+    local tz="${TIMEZONE:-$default_tz}"
 
-    # Prompt for timezone if not set via environment variable
+    log_info "Checking system timezone settings."
+
     if [ -z "$TIMEZONE" ]; then
         echo -n "Enter the timezone (or press Enter to use '$default_tz'): "
         read user_tz
-        if [ -n "$user_tz" ]; then
-            tz="$user_tz"
-        fi
+        tz="${user_tz:-$default_tz}"
+        log_info "Timezone set by user input or default: $tz."
     fi
 
     # Get the current system timezone
-    current_tz=$(timedatectl show --value --property Timezone)
+    local current_tz=$(timedatectl show --value --property Timezone)
 
     # Check if the desired timezone matches the current timezone
     if [ "$current_tz" != "$tz" ]; then
         if timedatectl set-timezone "$tz"; then
-            echo "Timezone set to $tz."
+            log_info "Timezone changed to $tz."
         else
-            echo "Failed to set timezone to $tz. Please ensure it's a valid timezone."
+            log_error "Failed to set timezone to $tz. Please ensure it's a valid timezone."
         fi
     else
-        echo "Timezone already set to $tz."
+        log_info "Timezone already set to $tz."
     fi
 }
 
 # Function to update system and install required packages
 update_system() {
-    echo "Updating system and installing required packages..."
+    log_info "Updating system and installing required packages..."
     apt-get update && apt-get -y upgrade
     for pkg in git sudo curl; do
-        dpkg -s "$pkg" &>/dev/null || {
-            echo "Installing $pkg..."
+        if dpkg -s "$pkg" &>/dev/null; then
+            log_info "$pkg is already installed."
+        else
+            log_info "Installing $pkg..."
             apt-get install -y "$pkg"
-        }
+        fi
     done
 }
 
 # Function to install Docker
 install_docker() {
-    echo "Installing Docker..."
+    log_info "Checking Docker installation..."
     if ! command -v docker >/dev/null 2>&1; then
+        log_info "Installing Docker..."
         apt-get update
         apt-get install -y apt-transport-https ca-certificates curl software-properties-common
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -74,13 +95,13 @@ install_docker() {
         apt-get update
         apt-get install -y docker-ce docker-ce-cli containerd.io
     else
-        echo "Docker already installed."
+        log_info "Docker is already installed."
     fi
 }
 
-# Function to install fonts
+# Function to install NERD Fonts
 install_fonts() {
-    echo "Installing fonts..."
+    log_info "Installing NERD Fonts..."
     local fonts=("Hack/Regular/HackNerdFont-Regular.ttf"
                  "CodeNewRoman/Music/Regular/CodeNewRomanNerdFont-Regular.otf"
                  "RobotoMono/Regular/RobotoMonoNerdFont-Regular.ttf"
@@ -89,34 +110,37 @@ install_fonts() {
     for font in "${fonts[@]}"; do
         local filename="/usr/local/share/fonts/${font##*/}"
         if [ ! -f "$filename" ]; then
-            echo "Downloading $font..."
+            log_info "Downloading $font..."
             curl -fL "https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/$font" -o "$filename"
         else
-            echo "$filename already installed."
+            log_info "$filename is already installed."
         fi
     done
 }
 
 # Function to install and configure Starship prompt for all current and future users
 setup_starship() {
-    echo "Setting up Starship for all current and future users..."
+    log_info "Setting up Starship for all current and future users..."
     
     # Install Starship if it's not already installed
     if ! command -v starship >/dev/null 2>&1; then
-        echo "Installing Starship..."
-        curl -sS https://starship.rs/install.sh | sh -s -- -y || {
-            echo "Failed to install Starship." >&2
-            return 1  # Return with error code if installation fails
-        }
+        log_info "Installing Starship..."
+        if curl -sS https://starship.rs/install.sh | sh -s -- -y; then
+            log_info "Starship installed successfully."
+        else
+            log_error "Failed to install Starship."
+            return 1
+        fi
     fi
 
-    # Download and apply the custom Starship configuration
-    STARSHIP_CONFIG_URL="https://gist.githubusercontent.com/yashodhank/0343daac9c8950bc63ffb9263043e345/raw/starship.toml"
+    local config_url="https://gist.githubusercontent.com/yashodhank/0343daac9c8950bc63ffb9263043e345/raw/starship.toml"
     mkdir -p /etc/skel/.config
-    curl -sS "$STARSHIP_CONFIG_URL" -o /etc/skel/.config/starship.toml || {
-        echo "Failed to download the Starship configuration." >&2
+    if curl -sS "$config_url" -o /etc/skel/.config/starship.toml; then
+        log_info "Starship configuration downloaded successfully."
+    else
+        log_error "Failed to download the Starship configuration."
         return 1
-    }
+    fi
 
     # Apply the configuration to all existing users
     getent passwd | while IFS=: read -r name _ uid gid _ home shell; do
@@ -128,6 +152,7 @@ setup_starship() {
             # Make sure to source Starship in .bashrc
             if ! grep -q 'starship init bash' "$home/.bashrc"; then
                 echo 'eval "$(starship init bash)"' >> "$home/.bashrc"
+                log_info "Starship initialized in $home/.bashrc."
             fi
         fi
     done
@@ -145,30 +170,40 @@ setup_starship() {
 
 # Function to install Rclone
 install_rclone() {
-    echo "Installing Rclone..."
-    command -v rclone >/dev/null 2>&1 || {
-        echo "Installing Rclone..."
-        curl https://rclone.org/install.sh | bash
-    }
+    log_info "Checking Rclone installation..."
+    if ! command -v rclone >/dev/null 2>&1; then
+        log_info "Installing Rclone..."
+        if curl https://rclone.org/install.sh | bash; then
+            log_info "Rclone installed successfully."
+        else
+            log_error "Failed to install Rclone."
+        fi
+    else
+        log_info "Rclone is already installed."
+    fi
 }
 
 # Function to configure SSH login alerts
 setup_ssh_alerts() {
-    echo "Setting up SSH login alerts..."
+    log_info "Setting up SSH login alerts..."
     local repo_url="https://github.com/yashodhank/ssh-login-alert-telegram"
     local config_path="/opt/ssh-login-alert-telegram"
     
     # Clone the repository if it doesn't already exist
     if [ ! -d "$config_path" ]; then
-        git clone "$repo_url" "$config_path"
+        log_info "Cloning the SSH login alert repository..."
+        if git clone "$repo_url" "$config_path"; then
+            log_info "Repository cloned successfully."
+        else
+            log_error "Failed to clone the repository."
+            return 1
+        fi
     fi
 
-    # Always get the latest credentials
     get_credentials "$@"
     
     local creds="$config_path/credentials.config"
-
-    # Check and update credentials.config
+    log_info "Updating credentials configuration..."
     if [ -f "$creds" ]; then
         # Using different delimiters for sed to avoid issues with characters like '/' and special handling for '(' and ')'
         sed -i "s|USERID=(.*|USERID=($USERID)|" "$creds"
@@ -180,35 +215,46 @@ setup_ssh_alerts() {
         echo "KEY=\"$KEY\"" >> "$creds"
     fi
 
-    # Execute the deployment script
-    bash "$config_path/deploy.sh"
-
-    echo "SSH login alerts have been configured with the latest details."
+    if bash "$config_path/deploy.sh"; then
+        log_info "SSH login alerts deployed successfully."
+    else
+        log_error "Failed to deploy SSH login alerts."
+    fi
 }
 
-# Additional function to install Neofetch and update MOTD
+# Function to install Neofetch and update MOTD
 install_neofetch_update_motd() {
-    echo "Installing Neofetch and updating MOTD..."
-    if ! command -v neofetech >/dev/null 2>&1; then
-        apt-get -y -qq install neofetch
-    fi
-    if [ ! -f "/etc/profile.d/motd.sh" ]; then
-        echo "neofetch" > /etc/profile.d/motd.sh
-        chmod +x /etc/profile.d/motd.sh
+    log_info "Installing Neofetch and updating MOTD..."
+    if ! command -v neofetch >/dev/null 2>&1; then
+        if apt-get -y -qq install neofetch; then
+            log_info "Neofetch installed successfully."
+        else
+            log_error "Failed to install Neofetch."
+            return 1
+        fi
     else
-        echo "MOTD already set to run Neofetch."
+        log_info "Neofetch is already installed."
+    fi
+
+    if [ ! -f "/etc/profile.d/motd.sh" ]; then
+        echo "neofetch" > "/etc/profile.d/motd.sh"
+        chmod +x "/etc/profile.d/motd.sh"
+        log_info "MOTD updated to run Neofetch."
+    else
+        log_info "MOTD already set to run Neofetch."
     fi
 }
 
 # Main function to orchestrate the setup
 main() {
+    log_info "Initiating main setup functions."
     update_system
     install_fonts
     setup_starship
     install_rclone
     setup_ssh_alerts "$@"
     install_neofetch_update_motd
-    echo "Setup completed successfully."
+    log_info "Setup completed successfully."
 }
 
 main "$@"
