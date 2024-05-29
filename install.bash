@@ -72,29 +72,34 @@ set_timezone() {
 # Function to update system and install required packages
 update_system() {
     log_info "Updating system and installing required packages..."
-    if apt-get -qq update; then
+
+    # Update system quietly
+    if ! output=$(apt-get update -qq 2>&1); then
+        log_error "Failed to update package lists. Error: $output"
+        return 1
+    else
         log_info "System update completed."
-    else
-        log_error "Failed to update package lists."
-        return 1
     fi
 
-    if apt-get -qq upgrade -y; then
+    # Upgrade system quietly
+    if ! output=$(apt-get upgrade -y -qq 2>&1); then
+        log_error "Failed to upgrade system. Error: $output"
+        return 1
+    else
         log_info "System upgrade completed."
-    else
-        log_error "Failed to upgrade system."
-        return 1
     fi
 
-    for pkg in git sudo curl wget nano htop tmux screen git unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip; do
+    # Install packages quietly
+    local pkgs=(git sudo curl wget nano htop tmux screen git unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
+    for pkg in "${pkgs[@]}"; do
         if dpkg -s "$pkg" &>/dev/null; then
             log_info "$pkg is already installed."
         else
             log_info "Installing $pkg..."
-            if apt-get -qq install -y "$pkg"; then
-                log_info "$pkg installed successfully."
+            if ! output=$(apt-get install -y -qq "$pkg" 2>&1); then
+                log_error "Failed to install $pkg. Error: $output"
             else
-                log_error "Failed to install $pkg."
+                log_info "$pkg installed successfully."
             fi
         fi
     done
