@@ -72,14 +72,14 @@ set_timezone() {
 # Function to update system and install required packages
 update_system() {
     log_info "Updating system and installing required packages..."
-    if apt-get update -qq; then
+    if apt-get -qq update; then
         log_info "System update completed."
     else
         log_error "Failed to update package lists."
         return 1
     fi
 
-    if apt-get -y upgrade -qq; then
+    if apt-get -qq upgrade -y; then
         log_info "System upgrade completed."
     else
         log_error "Failed to upgrade system."
@@ -91,7 +91,7 @@ update_system() {
             log_info "$pkg is already installed."
         else
             log_info "Installing $pkg..."
-            if apt-get install -y "$pkg" -qq; then
+            if apt-get -qq install -y "$pkg"; then
                 log_info "$pkg installed successfully."
             else
                 log_error "Failed to install $pkg."
@@ -100,26 +100,56 @@ update_system() {
     done
 }
 
-# Function to install Docker
+# Function to install Docker using the official Docker convenience script
 install_docker() {
     log_info "Checking Docker installation..."
     if ! command -v docker >/dev/null 2>&1; then
-        log_info "Installing Docker..."
-        if apt-get update -qq && \
-           apt-get install -y apt-transport-https ca-certificates curl software-properties-common -qq && \
-           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-           add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
-           apt-get update -qq && \
-           apt-get install -y docker-ce docker-ce-cli containerd.io -qq; then
-            log_info "Docker installed successfully."
+        log_info "Installing Docker using the official Docker installation script..."
+
+        # Download the Docker installation script
+        if curl -fsSL https://get.docker.com -o install-docker.sh; then
+            log_info "Docker installation script downloaded successfully."
+
+            # Optionally, you could add a dry run here to see what the script will do
+            # log_info "Running Docker installation script in dry-run mode..."
+            # sh install-dahocker.sh --dry-run
+
+            # Execute the Docker installation script
+            if sudo sh install-docker.sh; then
+                log_info "Docker installed successfully."
+            else
+                log_error "Failed to install Docker."
+                return 1
+            fi
         else
-            log_error "Failed to install Docker."
+            log_error "Failed to download the Docker installation script."
             return 1
         fi
     else
         log_info "Docker is already installed."
     fi
 }
+
+# # Function to install Docker
+# install_docker() {
+#     log_info "Checking Docker installation..."
+#     if ! command -v docker >/dev/null 2>&1; then
+#         log_info "Installing Docker..."
+#         if apt-get update -qq && \
+#            apt-get install -y apt-transport-https ca-certificates curl software-properties-common -qq && \
+#            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
+#            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
+#            apt-get update -qq && \
+#            apt-get install -y docker-ce docker-ce-cli containerd.io -qq; then
+#             log_info "Docker installed successfully."
+#         else
+#             log_error "Failed to install Docker."
+#             return 1
+#         fi
+#     else
+#         log_info "Docker is already installed."
+#     fi
+# }
 
 # Function to install NERD Fonts
 install_fonts() {
