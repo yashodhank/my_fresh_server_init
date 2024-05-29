@@ -300,10 +300,13 @@ install_neofetch_update_motd() {
 # Main function to orchestrate the setup
 main() {
     log_info "Initiating main setup functions."
+    get_credentials
+    set_timezone
     update_system
     install_fonts
     setup_starship
     install_rclone
+    install_docker
     setup_ssh_alerts "$@"
     install_neofetch_update_motd
     log_info "Setup completed successfully."
