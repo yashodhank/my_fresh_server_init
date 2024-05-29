@@ -86,7 +86,7 @@ update_system() {
         return 1
     fi
 
-    for pkg in git sudo curl; do
+    for pkg in git sudo curl wget nano htop tmux screen git unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip; do
         if dpkg -s "$pkg" &>/dev/null; then
             log_info "$pkg is already installed."
         else
