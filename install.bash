@@ -72,13 +72,30 @@ set_timezone() {
 # Function to update system and install required packages
 update_system() {
     log_info "Updating system and installing required packages..."
-    apt-get update && apt-get -y upgrade
+    if apt-get update -qq; then
+        log_info "System update completed."
+    else
+        log_error "Failed to update package lists."
+        return 1
+    fi
+
+    if apt-get -y upgrade -qq; then
+        log_info "System upgrade completed."
+    else
+        log_error "Failed to upgrade system."
+        return 1
+    fi
+
     for pkg in git sudo curl; do
         if dpkg -s "$pkg" &>/dev/null; then
             log_info "$pkg is already installed."
         else
             log_info "Installing $pkg..."
-            apt-get install -y "$pkg"
+            if apt-get install -y "$pkg" -qq; then
+                log_info "$pkg installed successfully."
+            else
+                log_error "Failed to install $pkg."
+            fi
         fi
     done
 }
@@ -88,12 +105,17 @@ install_docker() {
     log_info "Checking Docker installation..."
     if ! command -v docker >/dev/null 2>&1; then
         log_info "Installing Docker..."
-        apt-get update
-        apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-        apt-get update
-        apt-get install -y docker-ce docker-ce-cli containerd.io
+        if apt-get update -qq && \
+           apt-get install -y apt-transport-https ca-certificates curl software-properties-common -qq && \
+           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
+           add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
+           apt-get update -qq && \
+           apt-get install -y docker-ce docker-ce-cli containerd.io -qq; then
+            log_info "Docker installed successfully."
+        else
+            log_error "Failed to install Docker."
+            return 1
+        fi
     else
         log_info "Docker is already installed."
     fi
