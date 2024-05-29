@@ -6,6 +6,9 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+# Detect the operating system and version
+. /etc/os-release
+
 # Log file location
 LOG_FILE="/var/log/setup_server.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -23,8 +26,9 @@ log_error() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $1" | tee -a "$LOG_FILE" >&2
 }
 
-# Function to check and fix interrupted dpkg if necessary
+# Function to check and fix interrupted dpkg if necessary (Debian-based systems)
 check_dpkg() {
+    if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
     export DEBIAN_FRONTEND=noninteractive
     if ! sudo dpkg --audit >/dev/null; then
         log_warning "dpkg was interrupted. Attempting to correct this..."
@@ -34,6 +38,7 @@ check_dpkg() {
             log_error "Failed to correct dpkg configuration."
             exit 1
         fi
+    fi
     fi
 }
 
@@ -68,7 +73,8 @@ set_timezone() {
         log_info "Timezone set by user input or default: $tz."
     fi
 
-    # Get the current system timezone
+    # Setting the timezone
+    if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
     local current_tz=$(timedatectl show --value --property Timezone)
 
     # Check if the desired timezone matches the current timezone
@@ -80,6 +86,16 @@ set_timezone() {
         fi
     else
         log_info "Timezone already set to $tz."
+        fi
+    elif [[ "$ID" == "almalinux" || "$ID" == "rocky" || "$ID" == "centos" ]]; then
+        local current_tz=$(cat /etc/timezone)
+        if [ "$current_tz" != "$tz" ]; then
+            echo "$tz" > /etc/timezone
+            ln -sf "/usr/share/zoneinfo/$tz" /etc/localtime
+            log_info "Timezone changed to $tz."
+        else
+            log_info "Timezone already set to $tz."
+        fi
     fi
 }
 
@@ -87,6 +103,7 @@ set_timezone() {
 update_system() {
     export DEBIAN_FRONTEND=noninteractive
     log_info "Updating system and installing required packages..."
+    if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
     check_dpkg
 
     if ! output=$(apt-get update -qq 2>&1); then
@@ -97,30 +114,33 @@ update_system() {
     fi
 
     if ! output=$(apt-get upgrade -y -qq 2>&1); then
-        log_error "Failed to upgrade system. Error: $output"
+            log_error "Failed to upgrade system. Error: $
+
+output"
         return 1
-    else
-        log_info "System upgrade completed."
+    fi
+    elif [[ "$ID" == "almalinux" || "$ID" == "rocky" || "$ID" == "centos" ]]; then
+        if ! output=$(yum update -y -q 2>&1); then
+            log_error "Failed to update package lists. Error: $output"
+            return 1
+        fi
     fi
 
     # Define all packages
     local pkgs=(git sudo curl wget nano htop tmux screen git unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
+    local pkg_manager="apt-get"
+    local install_cmd="-y -qq install"
 
-    # Construct package install list, checking if each package is already installed
-    local install_list=""
-
-    for pkg in "${pkgs[@]}"; do
-        if ! dpkg -s "$pkg" &>/dev/null; then
-            install_list+="$pkg "
-        else
-            log_info "$pkg is already installed."
-        fi
-    done
+    if [[ "$ID" == "almalinux" || "$ID" == "rocky" || "$ID" == "centos" ]]; then
+        pkg_manager="yum"
+        install_cmd="-y install"
+        pkgs=(git sudo curl wget nano htop tmux screen unzip zip rsync tree net-tools firewalld jq ncdu nmap telnet mtr iputils tcpdump traceroute bind-utils whois sysstat iotop iftop vnstat glances snapd sshguard rkhunter mc lsof strace dstat iperf ntp-devel make automake gcc gcc-c++ kernel-devel python3-pip)
+    fi
 
     # Install all required packages at once
     if [ -n "$install_list" ]; then
         log_info "Installing required packages..."
-        if ! output=$(apt-get install -y -qq $install_list 2>&1); then
+    if ! output=$($pkg_manager $install_cmd ${pkgs[*]} 2>&1); then
             log_error "Failed to install required packages. Error: $output"
         else
             log_info "All required packages installed successfully."
@@ -179,7 +199,7 @@ setup_starship() {
     log_info "Setting up Starship for all current and future users..."
     if ! command -v starship >/dev/null 2>&1; then
         log_info "Installing Starship..."
-        if curl -fsSL https://starship.rs/install.sh | sh/888888888888888888888888 -s -- -y; then
+        if curl -fsSL https://starship.rs/install.sh | sh -s -- -y; then
             log_info "Starship installed successfully."
         else
             log_error "Failed to install Starship."
@@ -272,7 +292,7 @@ setup_ssh_alerts() {
         echo "KEY=\"$KEY\"" >> "$creds"
     fi
 
-    if sh "$config_path/deploy.sh" ; then
+    if bash "$config_path/deploy.sh" ; then
     log_info "SSH login alerts deployed successfully."
     else
         log_error "Failed to deploy SSH login alerts."
