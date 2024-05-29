@@ -145,27 +145,27 @@ setup_ssh_alerts() {
     if [ ! -d "$config_path" ]; then
         git clone "$repo_url" "$config_path"
     fi
-    
-    # Ensure credentials are fetched every time
+
+    # Always get the latest credentials
     get_credentials "$@"
     
     local creds="$config_path/credentials.config"
-    
-    # Update or create the credentials.config with new values using robust sed pattern
+
+    # Check and update credentials.config
     if [ -f "$creds" ]; then
-        # Using alternate delimiter '|' to avoid issues with slashes and special characters
+        # Using different delimiters for sed to avoid issues with characters like '/' and special handling for '(' and ')'
         sed -i "s|USERID=(.*|USERID=($USERID)|" "$creds"
         sed -i "s|KEY=\".*|KEY=\"$KEY\"|" "$creds"
     else
-        # Create a new credentials.config file if it does not exist
+        # If credentials.config doesn't exist, create it with the new values
         echo "# Your USERID or Channel ID to display alert and key, we recommend you create new bot with @BotFather on Telegram" > "$creds"
         echo "USERID=($USERID)" >> "$creds"
         echo "KEY=\"$KEY\"" >> "$creds"
     fi
-    
+
     # Execute the deployment script
     bash "$config_path/deploy.sh"
-    
+
     echo "SSH login alerts have been configured with the latest details."
 }
 
