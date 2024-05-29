@@ -74,7 +74,7 @@ update_system() {
     log_info "Updating system and installing required packages..."
 
     # Update system quietly
-    if ! output=$(apt-get update -qq 2>&1); then
+    if ! output=$(apt-get update -qq 2>/dev/null >/dev/null;); then
         log_error "Failed to update package lists. Error: $output"
         return 1
     else
@@ -82,7 +82,7 @@ update_system() {
     fi
 
     # Upgrade system quietly
-    if ! output=$(apt-get upgrade -y -qq 2>&1); then
+    if ! output=$(apt-get upgrade -y -qq 2>/dev/null >/dev/null;); then
         log_error "Failed to upgrade system. Error: $output"
         return 1
     else
@@ -105,7 +105,7 @@ update_system() {
     # Install all required packages at once
     if [ -n "$install_list" ]; then
         log_info "Installing required packages..."
-        if ! output=$(apt-get install -y -qq $install_list 2>&1); then
+        if ! output=$(apt-get install -y $install_list -qq 2>/dev/null >/dev/null;); then
             log_error "Failed to install required packages. Error: $output"
         else
             log_info "All required packages installed successfully."
@@ -278,7 +278,7 @@ install_rclone() {
     log_info "Checking Rclone installation..."
     if ! command -v rclone >/dev/null 2>&1; then
         log_info "Installing Rclone..."
-        if curl -fsSL https://rclone.org/install.sh | bash &> /dev/null; then
+        if curl -fsSL https://rclone.org/install.sh | bash 2>/dev/null >/dev/null;; then
             log_info "Rclone installed successfully."
         else
             log_error "Failed to install Rclone."
@@ -297,7 +297,7 @@ setup_ssh_alerts() {
     # Clone the repository if it doesn't already exist
     if [ ! -d "$config_path" ]; then
         log_info "Cloning the SSH login alert repository..."
-        if git clone "$repo_url" "$config_path" &> /dev/null; then
+        if git clone "$repo_url" "$config_path" 2>/dev/null >/dev/null;; then
             log_info "Repository cloned successfully."
         else
             log_error "Failed to clone the repository."
@@ -331,7 +331,7 @@ setup_ssh_alerts() {
 install_neofetch_update_motd() {
     log_info "Installing Neofetch and updating MOTD..."
     if ! command -v neofetch >/dev/null 2>&1; then
-        if apt-get -y -qq install neofetch &>/dev/null; then
+        if apt-get -y -qq install neofetch 2>/dev/null >/dev/null;; then
             log_info "Neofetch installed successfully."
         else
             log_error "Failed to install Neofetch."
