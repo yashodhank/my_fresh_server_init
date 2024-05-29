@@ -151,17 +151,9 @@ setup_ssh_alerts() {
     
     local creds="$config_path/credentials.config"
     
-    # Check if credentials.config exists and update or create it
-    if [ -f "$creds" ]; then
-        # Update existing USERID and KEY using sed
-        sed -i "s/\(USERID=(\).*\()/\1 $USERID \2/" "$creds"
-        sed -i "s/\(KEY=\"\).*\(\"\)/\1$KEY\2/" "$creds"
-    else
-        # Create a new credentials.config file if it does not exist
-        echo "# Your USERID or Channel ID to display alert and key, we recommend you create new bot with @BotFather on Telegram" > "$creds"
-        echo "USERID=( $USERID )" >> "$creds"
-        echo "KEY=\"$KEY\"" >> "$creds"
-    fi
+    # Correcting sed to handle special characters and properly format input
+    sed -i "s/\(USERID=(\).*\()/\1 $USERID )/" "$creds"
+    sed -i "s/\(KEY=\"\).*\(\"\)/\1$KEY\2/" "$creds"
     
     # Execute the deployment script
     bash "$config_path/deploy.sh"
