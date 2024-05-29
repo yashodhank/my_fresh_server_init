@@ -155,9 +155,11 @@ install_docker() {
 install_fonts() {
     log_info "Installing NERD Fonts..."
     local fonts=("Hack/Regular/HackNerdFont-Regular.ttf"
-                 "CodeNewRoman/Music/Regular/CodeNewRomanNerdFont-Regular.otf"
                  "RobotoMono/Regular/RobotoMonoNerdFont-Regular.ttf"
-                 "Ubuntu/Regular/UbuntuNerdFont-Regular.ttf")
+                 "SourceCodePro/SauceCodeProNerdFont-Regular.ttf"
+                 "AnonymousPro/Regular/AnonymiceProNerdFont-Regular.ttf"
+                 "FiraCode/Regular/FiraCodeNerdFont-Regular.ttf"
+                 "iA-Writer/Mono/Regular/iMWritingMonoNerdFont-Regular.ttf")
     mkdir -p /usr/local/share/fonts
     for font in "${fonts[@]}"; do
         local filename="/usr/local/share/fonts/${font##*/}"
