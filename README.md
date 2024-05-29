@@ -101,8 +101,6 @@ This script is released under the MIT License. For more details, see the `LICENS
 
 ### Notes
 
-- Replace `YOUR_TELEGRAM_BOT_KEY` with the actual key from Telegram.
+- Replace Telegram `CHANNELID` & `YOUR_TELEGRAM_BOT_KEY` with the actual channel or user ID and bot key from Telegram.
 - Modify any URLs or commands according to your repository or environment setup.
 - Ensure that all environment variables and paths are correct and tested in your environment.
-
-This README provides a comprehensive guide on how to use and understand the script, including detailed instructions for setup and customization options.
