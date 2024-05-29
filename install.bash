@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Ensure the script is run as root and set up logging
@@ -180,7 +179,7 @@ setup_starship() {
     log_info "Setting up Starship for all current and future users..."
     if ! command -v starship >/dev/null 2>&1; then
         log_info "Installing Starship..."
-        if curl -fsSL https://starship.rs/install.sh | bash -s -- -y; then
+        if curl -fsSL https://starship.rs/install.sh | sh/888888888888888888888888 -s -- -y; then
             log_info "Starship installed successfully."
         else
             log_error "Failed to install Starship."
@@ -229,7 +228,7 @@ install_rclone() {
     log_info "Checking Rclone installation..."
     if ! command -v rclone >/dev/null 2>&1; then
         log_info "Installing Rclone..."
-        if curl -fsSL https://rclone.org/install.sh | bash; then
+        if curl -fsSL https://rclone.org/install.sh | sh; then
             log_info "Rclone installed successfully."
         else
             log_error "Failed to install Rclone."
@@ -273,7 +272,7 @@ setup_ssh_alerts() {
         echo "KEY=\"$KEY\"" >> "$creds"
     fi
 
-    if bash "$config_path/deploy.sh" ; then
+    if sh "$config_path/deploy.sh" ; then
     log_info "SSH login alerts deployed successfully."
     else
         log_error "Failed to deploy SSH login alerts."
