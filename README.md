@@ -1,88 +1,94 @@
-# Server Setup Script
+# My Fresh Server Initializr
 
-This script automates the process of setting up a server with the necessary software, configurations, and security enhancements. It's designed to ensure all required packages are installed, fonts are set up, the Starship prompt is configured for all users, and more, on Debian or Ubuntu systems.
+This script automates the setup of a new server, handling everything from system updates and font installations to configuring useful utilities like Starship, Rclone, and Neofetch. It is designed to be run with root privileges and logs all operations to ensure transparency and traceability.
 
 ## Prerequisites
+- The script must be executed with root privileges.
+- A Debian-based Linux distribution (such as Ubuntu).
 
-- The script must be run as root.
-- Your system should be based on Debian or Ubuntu, as the installation commands utilize `apt-get`.
+## Features
+- **System Update**: Ensures all packages are up-to-date.
+- **Font Installation**: Installs a set of Nerd Fonts useful for developers and designers.
+- **Starship Setup**: Configures the Starship shell prompt for an enhanced terminal experience.
+- **Docker Installation**: Installs Docker for container management.
+- **Rclone Setup**: Installs Rclone for managing cloud storage services.
+- **SSH Alert Setup**: Configures alerts for SSH logins using Telegram.
+- **Neofetch Installation**: Installs Neofetch and sets it up to display system information at login.
 
-## Getting Started
+## Installation
 
-You can directly download and run the script from the GitHub repository using the following one-liner command:
+To run the script directly from GitHub, use the following command:
 
 ```bash
-curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "your_key_here"
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "YOUR_TELEGRAM_BOT_KEY"
 ```
 
-### Setup Instructions
+### Environment Variables and Inputs
 
-1. **Clone the repository**:
-   Clone the GitHub repository to your local system to examine or modify the script before execution:
+1. **USERID and KEY**: These are used for setting up SSH login alerts. They can be provided as:
+   - Environment variables: `USERID` and `KEY`
+   - Command-line arguments: Passed directly to the script.
 
-   ```bash
-   git clone https://github.com/yashodhank/my_fresh_server_init.git
-   cd my_fresh_server_init
-   ```
+2. **TIMEZONE**: Set the server's timezone. If not provided, the script will prompt for it or default to 'Asia/Kolkata'.
 
-2. **Make the script executable**:
-   Before running the script, make sure it is executable:
+## Usage
 
-   ```bash
-   chmod +x install.bash
-   ```
+### Setting Timezone
 
-## Usage Options
-
-The script supports several methods for providing the necessary USERID and KEY for SSH login alerts:
-
-### Using Environment Variables
-
-Set the USERID and KEY as environment variables before running the script:
+The script allows setting the system timezone via an environment variable or by prompting the user. To run the script with a specific timezone:
 
 ```bash
-export USERID=-1001566247622
-export KEY="your_key_here"
+export TIMEZONE="America/New_York"
 sudo ./install.bash
 ```
 
-### Using Command-Line Arguments
+If no timezone is specified, it will default to 'Asia/Kolkata'.
 
-Pass the USERID and KEY directly as command-line arguments:
+### Providing USERID and KEY for SSH Alerts
 
-```bash
-sudo ./install.bash -1001566247622 "your_key_here"
-```
-
-### Interactive Prompts
-
-If USERID and KEY are not provided through environment variables or command-line arguments, the script will prompt you interactively:
+You can export these before running the script:
 
 ```bash
-sudo ./ReadME.md
-# Follow the prompts to enter USERID and KEY
+export USERID="-1001566247622"
+export KEY="YOUR_TELEGRAM_BOT_KEY"
+sudo ./install.bash
 ```
 
-## Features
+Alternatively, you can pass them directly as arguments:
 
-- **System Update**: Updates all packages to their latest versions.
-- **Fonts**: Installs a curated selection of Nerd Fonts essential for developers and designers.
-- **Starship Prompt**: Configures the Starship prompt for an enhanced terminal experience for all users.
-- **Rclone**: Installs Rclone to manage and synchronize files across cloud storage services.
-- **SSH Login Alerts**: Configures Telegram-based alerts for SSH logins.
-- **Neofetch MOTD**: Sets up Neofetch to display system information at each login.
+```bash
+sudo ./install.bash -1001566247622 "YOUR_TELEGRAM_BOT_KEY"
+```
 
-## Contributions
+If not provided, the script will prompt for these values during execution.
 
-Contributions are welcome! For substantial changes, please open an issue first to discuss what you would like to change. Ensure you update tests as appropriate.
+## Detailed Step-by-Step Functions
+
+- **update_system()**: Updates the package lists and upgrades all the installed packages.
+- **install_fonts()**: Checks if specified fonts are installed, downloads, and installs them if not.
+- **setup_starship()**: Installs the Starship prompt and configures it for all users.
+- **install_docker()**: Installs Docker using the official Docker repositories.
+- **install_rclone()**: Downloads and installs Rclone.
+- **setup_ssh_alerts()**: Configures Telegram alerts for SSH login attempts using provided `USERID` and `KEY`.
+- **install_neofetch_update_motd()**: Installs Neofetch and configures it to display system info on login.
+
+## Logging
+
+All output from the script is logged to `/var/log/setup_server.log`, ensuring that you can review what changes were made and troubleshoot any issues.
+
+## Contributing
+
+Contributions to this script are welcome. Please fork the repository and submit pull requests with any enhancements.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
+This script is released under the MIT License. For more details, see the `LICENSE` file in the repository.
 
-### Enhanced Features:
-- **Direct Usage Command**: Added a one-liner command for direct script execution, ideal for users who prefer quick setups without manual downloads.
-- **Detailed Instructions**: Clarified steps for cloning and preparing the script to run, ensuring users understand each stage of the setup process.
-- **Comprehensive Usage Options**: Expanded on ways to provide credentials to the script, ensuring flexibility for different user preferences and security concerns.
 
-This README is designed to be comprehensive yet straightforward, guiding users through using the script effectively while offering multiple options to suit their setup preferences.
+### Notes
+
+- Replace `YOUR_TELEGRAM_BOT_KEY` with the actual key from Telegram.
+- Modify any URLs or commands according to your repository or environment setup.
+- Ensure that all environment variables and paths are correct and tested in your environment.
+
+This README provides a comprehensive guide on how to use and understand the script, including detailed instructions for setup and customization options.
