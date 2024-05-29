@@ -165,7 +165,7 @@ install_fonts() {
         local filename="/usr/local/share/fonts/${font##*/}"
         if [ ! -f "$filename" ]; then
             log_info "Downloading $font..."
-            curl -fL "https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/$font" -o "$filename"
+            curl -fsSL "https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/$font" -o "$filename"
         else
             log_info "$filename is already installed."
         fi
