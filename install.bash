@@ -96,7 +96,7 @@ update_system() {
             log_info "$pkg is already installed."
         else
             log_info "Installing $pkg..."
-            if ! output=$(apt-get install -y -qq "$pkg" 2>&1); then
+            if ! output=$(apt-get install -y -qq --force-yes "$pkg" 2>&1); then
                 log_error "Failed to install $pkg. Error: $output"
             else
                 log_info "$pkg installed successfully."
@@ -184,7 +184,7 @@ setup_starship() {
     # Install Starship if it's not already installed
     if ! command -v starship >/dev/null 2>&1; then
         log_info "Installing Starship..."
-        if curl -sS https://starship.rs/install.sh | sh -s -- -y; then
+        if curl -fsSL https://starship.rs/install.sh | sh -s -- -y; then
             log_info "Starship installed successfully."
         else
             log_error "Failed to install Starship."
@@ -194,7 +194,7 @@ setup_starship() {
 
     local config_url="https://gist.githubusercontent.com/yashodhank/0343daac9c8950bc63ffb9263043e345/raw/starship.toml"
     mkdir -p /etc/skel/.config
-    if curl -sS "$config_url" -o /etc/skel/.config/starship.toml; then
+    if curl -fsSL "$config_url" -o /etc/skel/.config/starship.toml; then
         log_info "Starship configuration downloaded successfully."
     else
         log_error "Failed to download the Starship configuration."
@@ -232,7 +232,7 @@ install_rclone() {
     log_info "Checking Rclone installation..."
     if ! command -v rclone >/dev/null 2>&1; then
         log_info "Installing Rclone..."
-        if curl https://rclone.org/install.sh | bash; then
+        if curl -fsSL https://rclone.org/install.sh | bash &> /dev/null; then
             log_info "Rclone installed successfully."
         else
             log_error "Failed to install Rclone."
@@ -251,7 +251,7 @@ setup_ssh_alerts() {
     # Clone the repository if it doesn't already exist
     if [ ! -d "$config_path" ]; then
         log_info "Cloning the SSH login alert repository..."
-        if git clone "$repo_url" "$config_path"; then
+        if git clone "$repo_url" "$config_path" &> /dev/null; then
             log_info "Repository cloned successfully."
         else
             log_error "Failed to clone the repository."
@@ -274,7 +274,7 @@ setup_ssh_alerts() {
         echo "KEY=\"$KEY\"" >> "$creds"
     fi
 
-    if bash "$config_path/deploy.sh"; then
+    if bash "$config_path/deploy.sh" ; then
         log_info "SSH login alerts deployed successfully."
     else
         log_error "Failed to deploy SSH login alerts."
@@ -285,7 +285,7 @@ setup_ssh_alerts() {
 install_neofetch_update_motd() {
     log_info "Installing Neofetch and updating MOTD..."
     if ! command -v neofetch >/dev/null 2>&1; then
-        if apt-get -y -qq install neofetch; then
+        if apt-get -y -qq install neofetch &>/dev/null; then
             log_info "Neofetch installed successfully."
         else
             log_error "Failed to install Neofetch."
