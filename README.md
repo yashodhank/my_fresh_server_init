@@ -20,8 +20,13 @@ This script automates the setup of a new server, handling everything from system
 To run the script directly from GitHub, use the following command:
 
 ```bash
-curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "YOUR_TELEGRAM_BOT_KEY"
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- CHANNELID "YOUR_TELEGRAM_BOT_KEY"
 ```
+> #### Example:
+> curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "738435042:AAHcvVtMTeRAQbuCEFRq9wiIkbYcPYCtcjo"
+>
+>  _Note: If you want to make sure the script is aware of the variables, and considering security best practices, you might consider downloading the script, reviewing its contents, setting the environment variables, and running it locally, rather than piping it directly from `curl`._
+
 
 ### Environment Variables and Inputs
 
@@ -39,28 +44,37 @@ The script allows setting the system timezone via an environment variable or by 
 
 ```bash
 export TIMEZONE="America/New_York"
-sudo ./install.bash
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- CHANNELID "YOUR_TELEGRAM_BOT_KEY"
 ```
 
 If no timezone is specified, it will default to 'Asia/Kolkata'.
 
-### Providing USERID and KEY for SSH Alerts
+### Providing USERID/CHANNELID and KEY for SSH Alerts
 
 You can export these before running the script:
 
 ```bash
-export USERID="-1001566247622"
+export USERID="CHANNELID"
 export KEY="YOUR_TELEGRAM_BOT_KEY"
-sudo ./install.bash
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- CHANNELID "YOUR_TELEGRAM_BOT_KEY"
 ```
 
 Alternatively, you can pass them directly as arguments:
 
 ```bash
-sudo ./install.bash -1001566247622 "YOUR_TELEGRAM_BOT_KEY"
+sudo ./install.bash CHANNELID "YOUR_TELEGRAM_BOT_KEY"
 ```
 
 If not provided, the script will prompt for these values during execution.
+
+
+#### Example:
+```bash
+export TIMEZONE="America/New_York"
+export USERID="-1001566247622"
+export KEY="738435042:AAHcvVtMTeRAQbuCEFRq9wiIkbYcPYCtcjo"
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash
+```
 
 ## Detailed Step-by-Step Functions
 
