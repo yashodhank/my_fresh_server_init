@@ -89,21 +89,67 @@ update_system() {
         log_info "System upgrade completed."
     fi
 
-    # Install packages quietly
+    # Define all packages
     local pkgs=(git sudo curl wget nano htop tmux screen git unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
+
+    # Construct package install list, checking if each package is already installed
+    local install_list=""
     for pkg in "${pkgs[@]}"; do
-        if dpkg -s "$pkg" &>/dev/null; then
-            log_info "$pkg is already installed."
+        if ! dpkg -s "$pkg" &>/dev/null; then
+            install_list+="$pkg "
         else
-            log_info "Installing $pkg..."
-            if ! output=$(apt-get install -y -qq --force-yes "$pkg" 2>&1); then
-                log_error "Failed to install $pkg. Error: $output"
-            else
-                log_info "$pkg installed successfully."
-            fi
+            log_info "$pkg is already installed."
         fi
     done
+
+    # Install all required packages at once
+    if [ -n "$install_list" ]; then
+        log_info "Installing required packages..."
+        if ! output=$(apt-get install -y -qq $install_list 2>&1); then
+            log_error "Failed to install required packages. Error: $output"
+        else
+            log_info "All required packages installed successfully."
+        fi
+    else
+        log_info "No additional packages needed to be installed."
+    fi
 }
+
+# # Function to update system and install required packages
+# update_system() {
+#     log_info "Updating system and installing required packages..."
+
+#     # Update system quietly
+#     if ! output=$(apt-get update -qq 2>&1); then
+#         log_error "Failed to update package lists. Error: $output"
+#         return 1
+#     else
+#         log_info "System update completed."
+#     fi
+
+#     # Upgrade system quietly
+#     if ! output=$(apt-get upgrade -y -qq 2>&1); then
+#         log_error "Failed to upgrade system. Error: $output"
+#         return 1
+#     else
+#         log_info "System upgrade completed."
+#     fi
+
+#     # Install packages quietly
+#     local pkgs=(git sudo curl wget nano htop tmux screen git unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
+#     for pkg in "${pkgs[@]}"; do
+#         if dpkg -s "$pkg" &>/dev/null; then
+#             log_info "$pkg is already installed."
+#         else
+#             log_info "Installing $pkg..."
+#             if ! output=$(apt-get install -y -qq --force-yes "$pkg" 2>&1); then
+#                 log_error "Failed to install $pkg. Error: $output"
+#             else
+#                 log_info "$pkg installed successfully."
+#             fi
+#         fi
+#     done
+# }
 
 # Function to install Docker using the official Docker convenience script
 install_docker() {
