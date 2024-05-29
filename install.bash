@@ -140,17 +140,33 @@ setup_ssh_alerts() {
     echo "Setting up SSH login alerts..."
     local repo_url="https://github.com/yashodhank/ssh-login-alert-telegram"
     local config_path="/opt/ssh-login-alert-telegram"
+    
+    # Clone the repository if it doesn't already exist
     if [ ! -d "$config_path" ]; then
         git clone "$repo_url" "$config_path"
     fi
+    
+    # Ensure credentials are fetched every time
+    get_credentials "$@"
+    
     local creds="$config_path/credentials.config"
-    if [ ! -f "$creds" ]; then
-        get_credentials "$@"
-        echo -e "USERID=( $USERID ) \nKEY=\"$KEY\" \n" > "$creds"
-        bash "$config_path/deploy.sh"
+    
+    # Check if credentials.config exists and update or create it
+    if [ -f "$creds" ]; then
+        # Update existing USERID and KEY using sed
+        sed -i "s/\(USERID=(\).*\()/\1 $USERID \2/" "$creds"
+        sed -i "s/\(KEY=\"\).*\(\"\)/\1$KEY\2/" "$creds"
     else
-        echo "SSH login alerts already configured."
+        # Create a new credentials.config file if it does not exist
+        echo "# Your USERID or Channel ID to display alert and key, we recommend you create new bot with @BotFather on Telegram" > "$creds"
+        echo "USERID=( $USERID )" >> "$creds"
+        echo "KEY=\"$KEY\"" >> "$creds"
     fi
+    
+    # Execute the deployment script
+    bash "$config_path/deploy.sh"
+    
+    echo "SSH login alerts have been configured with the latest details."
 }
 
 # Additional function to install Neofetch and update MOTD
