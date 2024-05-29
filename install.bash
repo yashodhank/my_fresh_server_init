@@ -22,14 +22,32 @@ get_credentials() {
     fi
 }
 
-# Function to set system timezone
+# Function to set system timezone with environment variable support, user input, and a default value
 set_timezone() {
-    echo "Setting system timezone..."
-    if [ $(timedatectl show --value --property Timezone) != "Asia/Kolkata" ]; then
-        timedatectl set-timezone Asia/Kolkata
-        echo "Timezone set to Asia/Kolkata."
+    local default_tz="Asia/Kolkata"
+    local tz="${TIMEZONE:-$default_tz}"  # Use TIMEZONE env variable if set, otherwise use default
+
+    # Prompt for timezone if not set via environment variable
+    if [ -z "$TIMEZONE" ]; then
+        echo -n "Enter the timezone (or press Enter to use '$default_tz'): "
+        read user_tz
+        if [ -n "$user_tz" ]; then
+            tz="$user_tz"
+        fi
+    fi
+
+    # Get the current system timezone
+    current_tz=$(timedatectl show --value --property Timezone)
+
+    # Check if the desired timezone matches the current timezone
+    if [ "$current_tz" != "$tz" ]; then
+        if timedatectl set-timezone "$tz"; then
+            echo "Timezone set to $tz."
+        else
+            echo "Failed to set timezone to $tz. Please ensure it's a valid timezone."
+        fi
     else
-        echo "Timezone already set to Asia/Kolkata."
+        echo "Timezone already set to $tz."
     fi
 }
 
@@ -59,7 +77,6 @@ install_docker() {
         echo "Docker already installed."
     fi
 }
-
 
 # Function to install fonts
 install_fonts() {
