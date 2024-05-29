@@ -25,6 +25,10 @@ curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/
 > #### Example:
 > curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "738435042:AAHcvVtMTeRAQbuCEFRq9wiIkbYcPYCtcjo"
 >
+> OR
+> 
+> wget -qO- https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "738435042:AAHcvVtMTeRAQbuCEFRq9wiIkbYcPYCtcjo"
+> 
 >  _Note: If you want to make sure the script is aware of the variables, and considering security best practices, you might consider downloading the script, reviewing its contents, setting the environment variables, and running it locally, rather than piping it directly from `curl`._
 
 
