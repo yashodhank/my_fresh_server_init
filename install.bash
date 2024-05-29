@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 # Ensure the script is run as root and set up logging
@@ -21,6 +22,20 @@ log_warning() {
 
 log_error() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $1" | tee -a "$LOG_FILE" >&2
+}
+
+# Function to check and fix interrupted dpkg if necessary
+check_dpkg() {
+    export DEBIAN_FRONTEND=noninteractive
+    if ! sudo dpkg --audit >/dev/null; then
+        log_warning "dpkg was interrupted. Attempting to correct this..."
+        if sudo dpkg --configure -a; then
+            log_info "dpkg configuration issues resolved."
+        else
+            log_error "Failed to correct dpkg configuration."
+            exit 1
+        fi
+    fi
 }
 
 log_info "Script execution started."
@@ -71,18 +86,18 @@ set_timezone() {
 
 # Function to update system and install required packages
 update_system() {
+    export DEBIAN_FRONTEND=noninteractive
     log_info "Updating system and installing required packages..."
+    check_dpkg
 
-    # Update system quietly
-    if ! output=$(apt-get update -qq 2>/dev/null >/dev/null;); then
+    if ! output=$(apt-get update -qq 2>&1); then
         log_error "Failed to update package lists. Error: $output"
         return 1
     else
         log_info "System update completed."
     fi
 
-    # Upgrade system quietly
-    if ! output=$(apt-get upgrade -y -qq 2>/dev/null >/dev/null;); then
+    if ! output=$(apt-get upgrade -y -qq 2>&1); then
         log_error "Failed to upgrade system. Error: $output"
         return 1
     else
@@ -94,6 +109,7 @@ update_system() {
 
     # Construct package install list, checking if each package is already installed
     local install_list=""
+
     for pkg in "${pkgs[@]}"; do
         if ! dpkg -s "$pkg" &>/dev/null; then
             install_list+="$pkg "
@@ -105,7 +121,7 @@ update_system() {
     # Install all required packages at once
     if [ -n "$install_list" ]; then
         log_info "Installing required packages..."
-        if ! output=$(apt-get install -y $install_list -qq 2>/dev/null >/dev/null;); then
+        if ! output=$(apt-get install -y -qq $install_list 2>&1); then
             log_error "Failed to install required packages. Error: $output"
         else
             log_info "All required packages installed successfully."
@@ -115,92 +131,24 @@ update_system() {
     fi
 }
 
-# # Function to update system and install required packages
-# update_system() {
-#     log_info "Updating system and installing required packages..."
-
-#     # Update system quietly
-#     if ! output=$(apt-get update -qq 2>&1); then
-#         log_error "Failed to update package lists. Error: $output"
-#         return 1
-#     else
-#         log_info "System update completed."
-#     fi
-
-#     # Upgrade system quietly
-#     if ! output=$(apt-get upgrade -y -qq 2>&1); then
-#         log_error "Failed to upgrade system. Error: $output"
-#         return 1
-#     else
-#         log_info "System upgrade completed."
-#     fi
-
-#     # Install packages quietly
-#     local pkgs=(git sudo curl wget nano htop tmux screen git unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
-#     for pkg in "${pkgs[@]}"; do
-#         if dpkg -s "$pkg" &>/dev/null; then
-#             log_info "$pkg is already installed."
-#         else
-#             log_info "Installing $pkg..."
-#             if ! output=$(apt-get install -y -qq --force-yes "$pkg" 2>&1); then
-#                 log_error "Failed to install $pkg. Error: $output"
-#             else
-#                 log_info "$pkg installed successfully."
-#             fi
-#         fi
-#     done
-# }
-
 # Function to install Docker using the official Docker convenience script
 install_docker() {
     log_info "Checking Docker installation..."
     if ! command -v docker >/dev/null 2>&1; then
         log_info "Installing Docker using the official Docker installation script..."
-
-        # Download the Docker installation script
-        if curl -fsSL https://get.docker.com -o install-docker.sh; then
-            log_info "Docker installation script downloaded successfully."
-
-            # Optionally, you could add a dry run here to see what the script will do
-            # log_info "Running Docker installation script in dry-run mode..."
-            # sh install-dahocker.sh --dry-run
-
-            # Execute the Docker installation script
-            if sudo sh install-docker.sh; then
+        if curl -fsSL https://get.docker.com -o get-docker.sh; then
+            if sudo sh get-docker.sh; then
                 log_info "Docker installed successfully."
             else
                 log_error "Failed to install Docker."
-                return 1
             fi
         else
             log_error "Failed to download the Docker installation script."
-            return 1
         fi
     else
         log_info "Docker is already installed."
     fi
 }
-
-# # Function to install Docker
-# install_docker() {
-#     log_info "Checking Docker installation..."
-#     if ! command -v docker >/dev/null 2>&1; then
-#         log_info "Installing Docker..."
-#         if apt-get update -qq && \
-#            apt-get install -y apt-transport-https ca-certificates curl software-properties-common -qq && \
-#            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-#            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
-#            apt-get update -qq && \
-#            apt-get install -y docker-ce docker-ce-cli containerd.io -qq; then
-#             log_info "Docker installed successfully."
-#         else
-#             log_error "Failed to install Docker."
-#             return 1
-#         fi
-#     else
-#         log_info "Docker is already installed."
-#     fi
-# }
 
 # Function to install NERD Fonts
 install_fonts() {
@@ -216,7 +164,11 @@ install_fonts() {
         local filename="/usr/local/share/fonts/${font##*/}"
         if [ ! -f "$filename" ]; then
             log_info "Downloading $font..."
-            curl -fsSL "https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/$font" -o "$filename"
+            if curl -fsSL "https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/$font" -o "$filename"; then
+                log_info "$filename downloaded successfully."
+            else
+                log_error "Failed to download $font."
+            fi
         else
             log_info "$filename is already installed."
         fi
@@ -226,11 +178,9 @@ install_fonts() {
 # Function to install and configure Starship prompt for all current and future users
 setup_starship() {
     log_info "Setting up Starship for all current and future users..."
-    
-    # Install Starship if it's not already installed
     if ! command -v starship >/dev/null 2>&1; then
         log_info "Installing Starship..."
-        if curl -fsSL https://starship.rs/install.sh | sh -s -- -y; then
+        if curl -fsSL https://starship.rs/install.sh | bash -s -- -y; then
             log_info "Starship installed successfully."
         else
             log_error "Failed to install Starship."
@@ -238,6 +188,7 @@ setup_starship() {
         fi
     fi
 
+    # Apply the Starship configuration to all users
     local config_url="https://gist.githubusercontent.com/yashodhank/0343daac9c8950bc63ffb9263043e345/raw/starship.toml"
     mkdir -p /etc/skel/.config
     if curl -fsSL "$config_url" -o /etc/skel/.config/starship.toml; then
@@ -248,19 +199,19 @@ setup_starship() {
     fi
 
     # Apply the configuration to all existing users
-    getent passwd | while IFS=: read -r name _ uid gid _ home shell; do
-        if [ "$uid" -ge 1000 ] && [ -d "$home" ] && [[ "$shell" == *"/bash" ]]; then
+        getent passwd | while IFS=: read -r name _ uid gid _ home shell; do
+            if [ "$uid" -ge 1000 ] && [ -d "$home" ] && [[ "$shell" == *"/bash" ]]; then
             local config_dir="$home/.config"
             mkdir -p "$config_dir"
             cp /etc/skel/.config/starship.toml "$config_dir/starship.toml"
 
             # Make sure to source Starship in .bashrc
-            if ! grep -q 'starship init bash' "$home/.bashrc"; then
-                echo 'eval "$(starship init bash)"' >> "$home/.bashrc"
-                log_info "Starship initialized in $home/.bashrc."
+                if ! grep -q 'starship init bash' "$home/.bashrc"; then
+                    echo 'eval "$(starship init bash)"' >> "$home/.bashrc"
+                    log_info "Starship initialized in $home/.bashrc."
+                fi
             fi
-        fi
-    done
+        done
 
     # Ensure the root user also has the configuration if the script is run as root
     if [ "$HOME" = "/root" ]; then
@@ -278,7 +229,7 @@ install_rclone() {
     log_info "Checking Rclone installation..."
     if ! command -v rclone >/dev/null 2>&1; then
         log_info "Installing Rclone..."
-        if curl -fsSL https://rclone.org/install.sh | bash 2>/dev/null >/dev/null;; then
+        if curl -fsSL https://rclone.org/install.sh | bash; then
             log_info "Rclone installed successfully."
         else
             log_error "Failed to install Rclone."
@@ -293,11 +244,13 @@ setup_ssh_alerts() {
     log_info "Setting up SSH login alerts..."
     local repo_url="https://github.com/yashodhank/ssh-login-alert-telegram"
     local config_path="/opt/ssh-login-alert-telegram"
-    
+
     # Clone the repository if it doesn't already exist
-    if [ ! -d "$config_path" ]; then
+   
+
+ if [ ! -d "$config_path" ]; then
         log_info "Cloning the SSH login alert repository..."
-        if git clone "$repo_url" "$config_path" 2>/dev/null >/dev/null;; then
+        if git clone "$repo_url" "$config_path" >/dev/null 2>&1; then
             log_info "Repository cloned successfully."
         else
             log_error "Failed to clone the repository."
@@ -305,33 +258,35 @@ setup_ssh_alerts() {
         fi
     fi
 
-    get_credentials "$@"
-    
+    # Set up or update credentials in the configuration
+    get_credentials
     local creds="$config_path/credentials.config"
     log_info "Updating credentials configuration..."
     if [ -f "$creds" ]; then
-        # Using different delimiters for sed to avoid issues with characters like '/' and special handling for '(' and ')'
-        sed -i "s|USERID=(.*|USERID=($USERID)|" "$creds"
-        sed -i "s|KEY=\".*|KEY=\"$KEY\"|" "$creds"
+        # Update the existing configuration
+        sed -i "s|USERID=.*|USERID=($USERID)|" "$creds"
+        sed -i "s|KEY=.*|KEY=\"$KEY\"|" "$creds"
     else
-        # If credentials.config doesn't exist, create it with the new values
+        # Create new configuration file
         echo "# Your USERID or Channel ID to display alert and key, we recommend you create new bot with @BotFather on Telegram" > "$creds"
         echo "USERID=($USERID)" >> "$creds"
         echo "KEY=\"$KEY\"" >> "$creds"
     fi
 
     if bash "$config_path/deploy.sh" ; then
-        log_info "SSH login alerts deployed successfully."
+    log_info "SSH login alerts deployed successfully."
     else
         log_error "Failed to deploy SSH login alerts."
+        return 1
     fi
 }
 
 # Function to install Neofetch and update MOTD
 install_neofetch_update_motd() {
+    export DEBIAN_FRONTEND=noninteractive
     log_info "Installing Neofetch and updating MOTD..."
     if ! command -v neofetch >/dev/null 2>&1; then
-        if apt-get -y -qq install neofetch 2>/dev/null >/dev/null;; then
+        if apt-get install -y neofetch -qq >/dev/null 2>&1; then
             log_info "Neofetch installed successfully."
         else
             log_error "Failed to install Neofetch."
