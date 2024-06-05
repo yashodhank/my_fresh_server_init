@@ -152,6 +152,7 @@ output"
 
 # Function to install Docker using the official Docker convenience script
 install_docker() {
+    export DEBIAN_FRONTEND=noninteractive
     log_info "Checking Docker installation..."
     if ! command -v docker >/dev/null 2>&1; then
         log_info "Installing Docker using the official Docker installation script..."
@@ -248,7 +249,7 @@ install_rclone() {
     log_info "Checking Rclone installation..."
     if ! command -v rclone >/dev/null 2>&1; then
         log_info "Installing Rclone..."
-        if curl -fsSL https://rclone.org/install.sh | sh; then
+        if curl -fsSL https://rclone.org/install.sh | bash; then
             log_info "Rclone installed successfully."
         else
             log_error "Failed to install Rclone."
@@ -303,6 +304,7 @@ setup_ssh_alerts() {
 # Function to install Neofetch and update MOTD
 install_neofetch_update_motd() {
     export DEBIAN_FRONTEND=noninteractive
+    rm -f /etc/motd # Clean up
     log_info "Installing Neofetch and updating MOTD..."
     if ! command -v neofetch >/dev/null 2>&1; then
         if apt-get install -y neofetch -qq >/dev/null 2>&1; then
