@@ -44,10 +44,11 @@ check_dpkg() {
 
 log_info "Script execution started."
 
-# Function to get USERID and KEY from environment variables or user input
+# Function to get USERID, KEY, and SSH keys URL from environment variables or user input
 get_credentials() {
     USERID="${1:-$USERID}"
     KEY="${2:-$KEY}"
+    SSH_KEYS_URL="${3:-https://github.com/yashodhank.keys}" # Default to your GitHub keys
 
     if [ -z "$USERID" ]; then
         read -p "Enter USERID: " USERID
@@ -57,6 +58,7 @@ get_credentials() {
         read -p "Enter KEY: " KEY
         log_info "KEY provided by user input."
     fi
+    log_info "Using SSH keys from: $SSH_KEYS_URL"
 }
 
 # Function to set system timezone with support for environment variable or user input
@@ -73,7 +75,7 @@ set_timezone() {
         log_info "Timezone set by user input or default: $tz."
     fi
 
-    # Setting the timezone
+    # Get and set the current system timezone
     if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
     local current_tz=$(timedatectl show --value --property Timezone)
 
@@ -326,10 +328,32 @@ install_neofetch_update_motd() {
     fi
 }
 
+# Function to add SSH keys to all users with SSH access
+add_ssh_keys_to_users() {
+    log_info "Adding SSH keys to all users with SSH access..."
+    local key_url="$SSH_KEYS_URL" # Default URL or user-provided
+    local key_data=$(curl -fsSL "$key_url")
+    if [ -z "$key_data" ]; then
+        log_error "Failed to fetch SSH keys from $key a_URL."
+        return 1
+    fi
+
+    # Iterate over all user directories in /home and root
+    for user_dir in /root /home/*; do
+        if [ -d "$user_dir" ] && [ -d "$user_dir/.ssh" ]; then
+            local username=$(basename "$user_dir")
+            log_info "Adding SSH keys to user: $username"
+            echo "$key_data" >> "$user_dir/.ssh/authorized_keys"
+            chown "$(id -u "$username"):$(id -g "$username")" "$user_dir/.ssh/authorized_keys"
+            chmod 600 "$user_dir/.ssh/authorized_keys"
+        fi
+    done
+}
+
 # Main function to orchestrate the setup
 main() {
     log_info "Initiating main setup functions."
-    get_credentials
+    get_credentials "$1" "$2" "$3" # Pass CLI arguments for USERID, KEY, and SSH_KEYS_URL
     set_timezone
     update_system
     install_fonts
@@ -338,6 +362,7 @@ main() {
     install_docker
     setup_ssh_alerts "$@"
     install_neofetch_update_motd
+    add_ssh_keys_to_users
     log_info "Setup completed successfully."
 }
 
