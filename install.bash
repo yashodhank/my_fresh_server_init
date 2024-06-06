@@ -351,6 +351,51 @@ add_ssh_keys_to_users() {
     done
 }
 
+# Function to install Eternal Terminal (et) for Debian and Ubuntu
+install_et() {
+    log_info "Installing Eternal Terminal (et)..."
+
+    if [[ "$ID" == "ubuntu" ]]; then
+        log_info "Detected Ubuntu. Using PPA to install et."
+        if ! add-apt-repository -y ppa:jgmath2000/et >/dev/null 2>&1; then
+            log_error "Failed to add the et PPA repository."
+            return 1
+        fi
+        if ! apt-get update -qq >/dev/null 2>&1; then
+            log_error "Failed to update package lists after adding et PPA."
+            return 1
+        fi
+        if ! apt-get install -y et >/dev/null 2>&1; then
+            log_error "Failed to install et from PPA."
+            return 1
+        fi
+    elif [[ "$ID" == "debian" ]]; then
+        log_info "Detected Debian. Using deb repo to install et."
+        if ! echo "deb https://github.com/MisterTea/debian-et/raw/master/debian-source/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/et.list >/dev/null; then
+            log_error "Failed to add the et deb repository."
+            return 1
+        fi
+        if ! curl -sSL https://github.com/MisterTea/debian-et/raw/master/et.gpg | sudo tee /etc/apt/trusted.gpg.d/et.gpg >/dev/null; then
+            log_error "Failed to add the et repository GPG key."
+            return 1
+        fi
+        if ! apt-get update -qq >/dev/null 2>&1; then
+            log_error "Failed to update package lists after adding et deb repo."
+            return 1
+        fi
+        if ! apt-get install -y et >/dev/null 2>&1; then
+            log_error "Failed to install et from deb repo."
+            return 1
+        fi
+    else
+        log_warning "Eternal Terminal (et) installation is only supported for Debian and Ubuntu. Skipping installation."
+        return 0
+    fi
+
+    log_info "Eternal Terminal (et) installed successfully."
+}
+
+
 # Main function to orchestrate the setup
 main() {
     log_info "Initiating main setup functions."
@@ -364,6 +409,7 @@ main() {
     setup_ssh_alerts "$@"
     install_neofetch_update_motd
     add_ssh_keys_to_users
+    install_et
     log_info "Setup completed successfully."
 }
 
