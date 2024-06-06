@@ -332,18 +332,36 @@ add_ssh_keys_to_users() {
 
     # Iterate over all user directories in /home and root
     for user_dir in /root /home/*; do
-        if [ -d "$user_dir" ] && [ -d "$user_dir/.ssh" ]; then
+        if [ -d "$user_dir" ]; then
             local username=$(basename "$user_dir")
-            if [[ "$(id -u "$username")" -ge 1000 ]] && [[ "$username" != "root" ]]; then
-                log_info "Adding SSH keys to user: $username"
-                local auth_keys="$user_dir/.ssh/authorized_keys"
+            if [ "$username" != "root" ]; then
+                if id -u "$username" >/dev/null 2>&1 && [[ "$(id -u "$username")" -ge 1000 ]]; then
+                    local auth_keys="$user_dir/.ssh/authorized_keys"
+                    if [ -d "$user_dir/.ssh" ]; then
+                        touch "$auth_keys"
+                        chown "$(id -u "$username"):$(id -g "$username")" "$auth_keys"
+                        chmod 600 "$auth_keys"
+
+                        while IFS= read -r key; do
+                            if ! grep -qF "$key" "$auth_keys"; then
+                                echo "$key" >> "$auth_keys"
+                                log_info "Added SSH key for user: $username"
+                            fi
+                        done <<< "$key_data"
+                    else
+                        log_warning "$user_dir/.ssh directory does not exist for user: $username"
+                    fi
+                fi
+            else
+                local auth_keys="/root/.ssh/authorized_keys"
+                mkdir -p /root/.ssh
                 touch "$auth_keys"
-                chown "$(id -u "$username"):$(id -g "$username")" "$auth_keys"
                 chmod 600 "$auth_keys"
 
                 while IFS= read -r key; do
                     if ! grep -qF "$key" "$auth_keys"; then
                         echo "$key" >> "$auth_keys"
+                        log_info "Added SSH key for root"
                     fi
                 done <<< "$key_data"
             fi
