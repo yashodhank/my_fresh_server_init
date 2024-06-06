@@ -75,7 +75,7 @@ set_timezone() {
         log_info "Timezone set by user input or default: $tz."
     fi
 
-    # Get and set the current system timezone
+    # Setting the timezone
     if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
     local current_tz=$(timedatectl show --value --property Timezone)
 
@@ -278,12 +278,12 @@ setup_ssh_alerts() {
     log_info "Updating credentials configuration..."
     if [ -f "$creds" ]; then
         # Update the existing configuration
-        sed -i "s|USERID=.*|USERID=($USERID)|" "$creds"
+        sed -i "s|USERID=.*|USERID=$USERID|" "$creds"
         sed -i "s|KEY=.*|KEY=\"$KEY\"|" "$creds"
     else
         # Create new configuration file
         echo "# Your USERID or Channel ID to display alert and key, we recommend you create new bot with @BotFather on Telegram" > "$creds"
-        echo "USERID=($USERID)" >> "$creds"
+        echo "USERID=$USERID" >> "$creds"
         echo "KEY=\"$KEY\"" >> "$creds"
     fi
 
@@ -334,10 +334,19 @@ add_ssh_keys_to_users() {
     for user_dir in /root /home/*; do
         if [ -d "$user_dir" ] && [ -d "$user_dir/.ssh" ]; then
             local username=$(basename "$user_dir")
+            if [[ "$(id -u "$username")" -ge 1000 ]]; then
             log_info "Adding SSH keys to user: $username"
-            echo "$key_data" >> "$user_dir/.ssh/authorized_keys"
-            chown "$(id -u "$username"):$(id -g "$username")" "$user_dir/.ssh/authorized_keys"
-            chmod 600 "$user_dir/.ssh/authorized_keys"
+                local auth_keys="$user_dir/.ssh/authorized_keys"
+                touch "$auth_keys"
+                chown "$(id -u "$username"):$(id -g "$username")" "$auth_keys"
+                chmod 600 "$auth_keys"
+
+                while IFS= read -r key; do
+                    if ! grep -qF "$key" "$auth_keys"; then
+                        echo "$key" >> "$auth_keys"
+                    fi
+                done <<< "$key_data"
+            fi
         fi
     done
 }
