@@ -127,14 +127,14 @@ update_system() {
     fi
 
     # Define all packages
-    local pkgs=(git sudo curl wget nano htop tmux screen unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
+    local pkgs=(git sudo curl wget nano htop tmux screen unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard magic-wormhole rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
     local pkg_manager="apt-get"
     local install_cmd="-y -qq install"
 
     if [[ "$ID" == "almalinux" || "$ID" == "rocky" || "$ID" == "centos" ]]; then
         pkg_manager="yum"
         install_cmd="-y install"
-        pkgs=(git sudo curl wget nano htop tmux screen unzip zip rsync tree net-tools firewalld jq ncdu nmap telnet mtr iputils tcpdump traceroute bind-utils whois sysstat iotop iftop vnstat glances snapd sshguard rkhunter mc lsof strace dstat iperf ntp-devel make automake gcc gcc-c++ kernel-devel python3-pip)
+        pkgs=(git sudo curl wget nano htop tmux screen unzip zip rsync tree net-tools firewalld jq ncdu nmap telnet mtr iputils tcpdump traceroute bind-utils whois sysstat iotop iftop vnstat glances snapd sshguard magic-wormhole rkhunter mc lsof strace dstat iperf ntp-devel make automake gcc gcc-c++ kernel-devel python3-pip)
     fi
 
     # Install all required packages at once
