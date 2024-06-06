@@ -334,8 +334,8 @@ add_ssh_keys_to_users() {
     for user_dir in /root /home/*; do
         if [ -d "$user_dir" ] && [ -d "$user_dir/.ssh" ]; then
             local username=$(basename "$user_dir")
-            if [[ "$(id -u "$username")" -ge 1000 ]]; then
-            log_info "Adding SSH keys to user: $username"
+            if [[ "$(id -u "$username")" -ge 1000 ]] && [[ "$username" != "root" ]]; then
+                log_info "Adding SSH keys to user: $username"
                 local auth_keys="$user_dir/.ssh/authorized_keys"
                 touch "$auth_keys"
                 chown "$(id -u "$username"):$(id -g "$username")" "$auth_keys"
