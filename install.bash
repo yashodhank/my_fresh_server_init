@@ -116,9 +116,7 @@ update_system() {
     fi
 
     if ! output=$(apt-get upgrade -y -qq 2>&1); then
-            log_error "Failed to upgrade system. Error: $
-
-output"
+            log_error "Failed to upgrade system. Error: $output"
         return 1
     fi
     elif [[ "$ID" == "almalinux" || "$ID" == "rocky" || "$ID" == "centos" ]]; then
@@ -129,7 +127,7 @@ output"
     fi
 
     # Define all packages
-    local pkgs=(git sudo curl wget nano htop tmux screen git unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
+    local pkgs=(git sudo curl wget nano htop tmux screen unzip zip rsync tree net-tools ufw jq ncdu nmap telnet mtr iputils-ping tcpdump traceroute bind9-dnsutils whois sysstat iotop iftop vnstat glances snapd software-properties-common sshguard rkhunter mc lsof strace dstat iperf3 ntp build-essential python3-pip)
     local pkg_manager="apt-get"
     local install_cmd="-y -qq install"
 
@@ -140,15 +138,11 @@ output"
     fi
 
     # Install all required packages at once
-    if [ -n "$install_list" ]; then
-        log_info "Installing required packages..."
     if ! output=$($pkg_manager $install_cmd ${pkgs[*]} 2>&1); then
             log_error "Failed to install required packages. Error: $output"
-        else
-            log_info "All required packages installed successfully."
-        fi
+        return 1
     else
-        log_info "No additional packages needed to be installed."
+        log_info "All required packages installed successfully."
     fi
 }
 
@@ -268,8 +262,6 @@ setup_ssh_alerts() {
     local config_path="/opt/ssh-login-alert-telegram"
 
     # Clone the repository if it doesn't already exist
-   
-
  if [ ! -d "$config_path" ]; then
         log_info "Cloning the SSH login alert repository..."
         if git clone "$repo_url" "$config_path" >/dev/null 2>&1; then
@@ -295,7 +287,7 @@ setup_ssh_alerts() {
         echo "KEY=\"$KEY\"" >> "$creds"
     fi
 
-    if bash "$config_path/deploy.sh" ; then
+    if bash "$config_path/deploy.sh"; then
     log_info "SSH login alerts deployed successfully."
     else
         log_error "Failed to deploy SSH login alerts."
@@ -334,7 +326,7 @@ add_ssh_keys_to_users() {
     local key_url="$SSH_KEYS_URL" # Default URL or user-provided
     local key_data=$(curl -fsSL "$key_url")
     if [ -z "$key_data" ]; then
-        log_error "Failed to fetch SSH keys from $key a_URL."
+        log_error "Failed to fetch SSH keys from $key_url."
         return 1
     fi
 
