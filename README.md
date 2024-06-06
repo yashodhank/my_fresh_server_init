@@ -4,7 +4,12 @@ This script automates the setup of a new server, handling everything from system
 
 ## Prerequisites
 - The script must be executed with root privileges.
-- A Debian-based Linux distribution (such as Ubuntu).
+- Supported Linux distributions:
+  - Ubuntu 22.04, 20.04, 18.04
+  - Debian 12, 11
+  - Alma Linux 9, 8
+  - Rocky Linux 8
+  - CentOS 7
 
 ## Features
 - **System Update**: Ensures all packages are up-to-date.
@@ -14,23 +19,28 @@ This script automates the setup of a new server, handling everything from system
 - **Rclone Setup**: Installs Rclone for managing cloud storage services.
 - **SSH Alert Setup**: Configures alerts for SSH logins using Telegram.
 - **Neofetch Installation**: Installs Neofetch and sets it up to display system information at login.
+- **ET (Eternal Terminal) Installation**: Installs Eternal Terminal for Debian and Ubuntu.
+- **SSH Key Management**: Adds SSH keys to all users with SSH access, ensuring keys are updated without duplication.
 
 ## Installation
 
 To run the script directly from GitHub, use the following command:
 
 ```bash
-curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- CHANNELID "YOUR_TELEGRAM_BOT_KEY"
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- <USERID> <KEY> <SSH_KEYS_URL>
 ```
 > #### Example:
+> ```bash
 > curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "738435042:AAHcvVtMTeRAQbuCEFRq9wiIkbYcPYCtcjo"
+> ```
 >
 > OR
 > 
+> ```bash
 > wget -qO- https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- -1001566247622 "738435042:AAHcvVtMTeRAQbuCEFRq9wiIkbYcPYCtcjo"
+> ```
 > 
 >  _Note: If you want to make sure the script is aware of the variables, and considering security best practices, you might consider downloading the script, reviewing its contents, setting the environment variables, and running it locally, rather than piping it directly from `curl`._
-
 
 ### Environment Variables and Inputs
 
@@ -40,6 +50,8 @@ curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/
 
 2. **TIMEZONE**: Set the server's timezone. If not provided, the script will prompt for it or default to 'Asia/Kolkata'.
 
+3. **SSH_KEYS_URL**: URL to fetch SSH keys. If not provided, defaults to `https://github.com/yashodhank.keys`.
+
 ## Usage
 
 ### Setting Timezone
@@ -48,7 +60,7 @@ The script allows setting the system timezone via an environment variable or by 
 
 ```bash
 export TIMEZONE="America/New_York"
-curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- CHANNELID "YOUR_TELEGRAM_BOT_KEY"
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- <USERID> <KEY> <SSH_KEYS_URL>
 ```
 
 If no timezone is specified, it will default to 'Asia/Kolkata'.
@@ -60,7 +72,7 @@ You can export these before running the script:
 ```bash
 export USERID="CHANNELID"
 export KEY="YOUR_TELEGRAM_BOT_KEY"
-curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- CHANNELID "YOUR_TELEGRAM_BOT_KEY"
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- "$USERID" "$KEY"
 ```
 
 Alternatively, you can pass them directly as arguments:
@@ -71,12 +83,23 @@ sudo ./install.bash CHANNELID "YOUR_TELEGRAM_BOT_KEY"
 
 If not provided, the script will prompt for these values during execution.
 
+### Providing SSH Keys URL
+
+You can export the `SSH_KEYS_URL` before running the script:
+
+```bash
+export SSH_KEYS_URL="https://github.com/yourusername.keys"
+curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash -s -- "$USERID" "$KEY" "$SSH_KEYS_URL"
+```
+
+If not provided, it will default to `https://github.com/yashodhank.keys`.
 
 #### Example:
 ```bash
 export TIMEZONE="America/New_York"
 export USERID="-1001566247622"
 export KEY="738435042:AAHcvVtMTeRAQbuCEFRq9wiIkbYcPYCtcjo"
+export SSH_KEYS_URL="https://github.com/yourusername.keys"
 curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/install.bash | sudo bash
 ```
 
@@ -89,6 +112,8 @@ curl -sS https://raw.githubusercontent.com/yashodhank/my_fresh_server_init/main/
 - **install_rclone()**: Downloads and installs Rclone.
 - **setup_ssh_alerts()**: Configures Telegram alerts for SSH login attempts using provided `USERID` and `KEY`.
 - **install_neofetch_update_motd()**: Installs Neofetch and configures it to display system info on login.
+- **add_ssh_keys_to_users()**: Adds SSH keys to all users with SSH access, ensuring no duplication.
+- **install_et()**: Installs Eternal Terminal (et) for Debian and Ubuntu.
 
 ## Logging
 
@@ -101,7 +126,6 @@ Contributions to this script are welcome. Please fork the repository and submit 
 ## License
 
 This script is released under the MIT License. For more details, see the `LICENSE` file in the repository.
-
 
 ### Notes
 
