@@ -2,7 +2,7 @@
 
 # Ensure the script is run as root and set up logging
 if [ "$(id -u)" -ne 0 ]; then
-    echo "This script must be run as root" >&2
+    echo -e "\033[31mThis script must be run as root\033[0m" >&2
     exit 1
 fi
 
@@ -13,17 +13,23 @@ fi
 LOG_FILE="/var/log/setup_server.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
+# Color codes for log messages
+INFO_COLOR="\033[32m"
+WARN_COLOR="\033[33m"
+ERROR_COLOR="\033[31m"
+RESET_COLOR="\033[0m"
+
 # Logging functions
 log_info() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] $1" | tee -a "$LOG_FILE"
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') [${INFO_COLOR}INFO${RESET_COLOR}] $1" | tee -a "$LOG_FILE"
 }
 
 log_warning() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $1" | tee -a "$LOG_FILE"
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') [${WARN_COLOR}WARNING${RESET_COLOR}] $1" | tee -a "$LOG_FILE"
 }
 
 log_error() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $1" | tee -a "$LOG_FILE" >&2
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') [${ERROR_COLOR}ERROR${RESET_COLOR}] $1" | tee -a "$LOG_FILE" >&2
 }
 
 # Function to check and fix interrupted dpkg if necessary (Debian-based systems)
